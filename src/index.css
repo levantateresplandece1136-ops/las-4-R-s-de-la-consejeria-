@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Lora", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  --color-sand: #F5F0E8;
+  --color-sand-dark: #EAE3D5;
+  --color-sand-border: #D9D0BC;
+  --color-ink: #1C1710;
+  --color-ink-soft: #4A4535;
+  --color-ink-muted: #7A7260;
+  --color-gold: #B8892A;
+  --color-gold-light: #F0DC9A;
+  --color-gold-pale: #FAF5E4;
+
+  --color-s1: #5B3FD4;
+  --color-s1-light: #EAE6FF;
+  --color-s1-medium: #8B78EE;
+
+  --color-s2: #1A7A5E;
+  --color-s2-light: #D6F0E7;
+  --color-s2-medium: #3DAA82;
+
+  --color-s3: #A8391A;
+  --color-s3-light: #FCE8E0;
+  --color-s3-medium: #D46040;
+
+  --color-s4: #1A5EA8;
+  --color-s4-light: #DFF0FC;
+  --color-s4-medium: #4090D4;
+}
+
+/* Base override for layout integration */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-sand);
+  color: var(--color-ink);
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-loader {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Style custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-sand);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-sand-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-muted);
+}

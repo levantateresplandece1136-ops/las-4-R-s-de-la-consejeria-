@@ -1,0 +1,6 @@
+{
+  "name": "Sistema 4R — Consejería Bíblica",
+  "description": "Sistema de Consejería Bíblica Cristocéntrica basado en la metodología de las 4 etapas: Redefinir, Reenfocar, Rendir y Reestructurar, potenciado por Inteligencia Artificial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
