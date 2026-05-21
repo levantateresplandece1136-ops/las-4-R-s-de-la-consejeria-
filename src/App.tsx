@@ -57,7 +57,26 @@ const LIFE_AREAS = [
 export default function App() {
   const [problema, setProblema] = useState<string>("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
-  const [etapaInicialSelect, setEtapaInicialSelect] = useState<string>("auto");
+  const [etapaInicialSelect, setEtapaInicialSelect] = useState<string>("1");
+  
+  // Guided input option states
+  const [inputMode, setInputMode] = useState<"words" | "questions">("words");
+  const [q1, setQ1] = useState<string>("");
+  const [q2, setQ2] = useState<string>("");
+  const [q3, setQ3] = useState<string>("");
+  const [q4, setQ4] = useState<string>("");
+
+  // Compile individual diagnostic questions automatically into 'problema' when in questions mode
+  useEffect(() => {
+    if (inputMode === "questions") {
+      let compiled = "";
+      if (q1.trim()) compiled += `[CIRCUNSTANCIA EXTERNA Y DETONANTE]:\n${q1.trim()}\n\n`;
+      if (q2.trim()) compiled += `[REACCIÓN CONDUCTUAL Y EMOCIONAL]:\n${q2.trim()}\n\n`;
+      if (q3.trim()) compiled += `[DESEOS RAÍCES / ÍDOLOS DEL CORAZÓN]:\n${q3.trim()}\n\n`;
+      if (q4.trim()) compiled += `[PERSPECTIVA DE CONFIANZA Y FE EN DIOS]:\n${q4.trim()}\n\n`;
+      setProblema(compiled.trim());
+    }
+  }, [q1, q2, q3, q4, inputMode]);
   
   // Route state
   const [route, setRoute] = useState<CounselingRoute | null>(null);
@@ -179,7 +198,8 @@ export default function App() {
   const handleSelectExample = (ex: CaseExample) => {
     setProblema(ex.problema);
     setSelectedAreas(ex.context);
-    setEtapaInicialSelect(ex.etapa);
+    setEtapaInicialSelect("1");
+    setInputMode("words");
   };
 
   // Reset case
@@ -187,7 +207,7 @@ export default function App() {
     if (confirm("¿Estás seguro de que deseas iniciar un nuevo caso? Se limpiará el progreso actual.")) {
       setProblema("");
       setSelectedAreas([]);
-      setEtapaInicialSelect("auto");
+      setEtapaInicialSelect("1");
       setRoute(null);
       setActiveStage(1);
       setError(null);
@@ -195,6 +215,11 @@ export default function App() {
       setNotaInput("");
       setNotas([]);
       setCurrentCaseId(null);
+      setInputMode("words");
+      setQ1("");
+      setQ2("");
+      setQ3("");
+      setQ4("");
     }
   };
 
@@ -244,6 +269,7 @@ export default function App() {
     setActiveStage(item.activeStage || 1);
     setNotas(item.notas || []);
     setCurrentCaseId(item.id);
+    setInputMode("words");
   };
 
   // Export all session notes to a .txt file
@@ -498,7 +524,7 @@ export default function App() {
           persistCasesList(newList);
         }
       } else {
-        const initialEtapa = data.etapaInicial || 1;
+        const initialEtapa = 1;
         setActiveStage(initialEtapa);
         setNotas([]);
 
@@ -518,7 +544,7 @@ export default function App() {
           }),
           problema,
           selectedAreas,
-          etapaInicialSelect,
+          etapaInicialSelect: "1",
           activeStage: initialEtapa,
           route: data,
           notas: []
@@ -706,17 +732,108 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold text-ink-muted tracking-wider uppercase">
                 Descripción de la crisis o dolor
               </span>
-              <textarea 
-                value={problema}
-                onChange={(e) => setProblema(e.target.value)}
-                disabled={!!route}
-                placeholder="Describe la situación con detalle: contexto, desencadenantes, comportamiento observado, lo que el aconsejado expresa y actitudes espirituales..."
-                className="w-full text-xs min-h-[100px] resize-none border-1.5 border-sand-border bg-white rounded-lg p-2.5 focus:border-gold outline-none text-ink placeholder:text-ink-muted/55 disabled:bg-sand-dark/15 disabled:text-ink-soft"
-              />
+              
+              {/* Segmented Controller for Input Modes */}
+              <div className="flex border border-sand-border rounded-lg overflow-hidden bg-sand-dark/25 p-0.5 mb-1">
+                <button
+                  type="button"
+                  disabled={!!route}
+                  onClick={() => setInputMode("words")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-md transition-all ${
+                    inputMode === "words"
+                      ? "bg-white text-gold shadow-xs font-bold font-serif"
+                      : "text-ink-soft hover:text-ink hover:bg-white/40 font-sans"
+                  } disabled:opacity-70 disabled:cursor-not-allowed`}
+                  title="Expón el caso libremente en tus propias palabras"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Propias Palabras</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!!route}
+                  onClick={() => setInputMode("questions")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-md transition-all ${
+                    inputMode === "questions"
+                      ? "bg-white text-gold shadow-xs font-bold font-serif"
+                      : "text-ink-soft hover:text-ink hover:bg-white/40 font-sans"
+                  } disabled:opacity-70 disabled:cursor-not-allowed`}
+                  title="Responde un set de preguntas para diagnosticar la situación con orden"
+                >
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  <span>Preguntas Guía</span>
+                </button>
+              </div>
+
+              {inputMode === "words" ? (
+                <div className="flex flex-col gap-1">
+                  <textarea 
+                    value={problema}
+                    onChange={(e) => setProblema(e.target.value)}
+                    disabled={!!route}
+                    placeholder="Describe la situación con detalle: contexto, desencadenantes, comportamiento observado, lo que el aconsejado expresa y actitudes espirituales..."
+                    className="w-full text-xs min-h-[140px] resize-none border-1.5 border-sand-border bg-white rounded-lg p-2.5 focus:border-gold outline-none text-ink placeholder:text-ink-muted/55 disabled:bg-sand-dark/15 disabled:text-ink-soft"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3 pt-1 border border-sand-border bg-white/40 rounded-xl p-3 max-h-[380px] overflow-y-auto">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider text-left">
+                      1. Circunstancia Externa o Detonante
+                    </label>
+                    <textarea
+                      value={q1}
+                      onChange={(e) => setQ1(e.target.value)}
+                      disabled={!!route}
+                      placeholder="¿Qué eventos o dificultades detonaron esta crisis?"
+                      className="w-full text-xs min-h-[60px] resize-none border border-sand-border bg-white rounded-lg p-2 focus:border-gold outline-none text-ink placeholder:text-ink-muted/50 disabled:bg-sand-dark/15 disabled:text-ink-soft text-left"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider text-left">
+                      2. Reacción Conductual y Emocional
+                    </label>
+                    <textarea
+                      value={q2}
+                      onChange={(e) => setQ2(e.target.value)}
+                      disabled={!!route}
+                      placeholder="¿Cómo reacciona emocional o físicamente; palabras o conductas?"
+                      className="w-full text-xs min-h-[60px] resize-none border border-sand-border bg-white rounded-lg p-2 focus:border-gold outline-none text-ink placeholder:text-ink-muted/50 disabled:bg-sand-dark/15 disabled:text-ink-soft text-left"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider text-left">
+                      3. Corazón (Deseos o Ídolos)
+                    </label>
+                    <textarea
+                      value={q3}
+                      onChange={(e) => setQ3(e.target.value)}
+                      disabled={!!route}
+                      placeholder="¿Qué anhela, teme o valora más su corazón en esto?"
+                      className="w-full text-xs min-h-[60px] resize-none border border-sand-border bg-white rounded-lg p-2 focus:border-gold outline-none text-ink placeholder:text-ink-muted/50 disabled:bg-sand-dark/15 disabled:text-ink-soft text-left"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider text-left">
+                      4. Dios (Perspectiva de Fe y Gracia)
+                    </label>
+                    <textarea
+                      value={q4}
+                      onChange={(e) => setQ4(e.target.value)}
+                      disabled={!!route}
+                      placeholder="¿Cómo busca percibir el obrar o las escrituras en la circunstancia?"
+                      className="w-full text-xs min-h-[60px] resize-none border border-sand-border bg-white rounded-lg p-2 focus:border-gold outline-none text-ink placeholder:text-ink-muted/50 disabled:bg-sand-dark/15 disabled:text-ink-soft text-left"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Quick pre-loaders if no route loaded */}
@@ -772,28 +889,12 @@ export default function App() {
           {/* Initial Stage Select */}
           <div className="p-5 border-b-1.5 border-sand-border flex flex-col gap-2.5">
             <div className="flex flex-col gap-1">
-              <label htmlFor="etapa-select" className="text-[10px] font-bold text-ink-muted tracking-wider uppercase">
+              <label className="text-[10px] font-bold text-ink-muted tracking-wider uppercase">
                 Etapa inicial del tratamiento
               </label>
-              <div className="relative">
-                <select
-                  id="etapa-select"
-                  value={etapaInicialSelect}
-                  onChange={(e) => setEtapaInicialSelect(e.target.value)}
-                  disabled={!!route}
-                  className="w-full text-xs bg-white border-1.5 border-sand-border rounded-lg py-2 pl-3 pr-10 appearance-none focus:border-gold outline-none text-ink disabled:bg-sand-dark/15 disabled:text-ink-soft disabled:cursor-not-allowed"
-                >
-                  <option value="auto">Detectar automáticamente (IA)</option>
-                  <option value="1">1 — Redefinir la Situación</option>
-                  <option value="2">2 — Reenfocar el Corazón</option>
-                  <option value="3">3 — Rendir demandas (Arrepentimiento)</option>
-                  <option value="4">4 — Reestructurar Hábitos</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-muted">
-                  <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+              <div className="text-xs bg-sand-dark/30 border border-sand-border rounded-lg py-2 px-3 text-ink-soft font-semibold flex items-center justify-between">
+                <span>01 — Redefinir la Situación</span>
+                <span className="text-[9px] bg-gold-pale text-gold px-2 py-0.5 rounded-full font-bold uppercase tracking-wider font-sans">Etapa Fija</span>
               </div>
             </div>
 
