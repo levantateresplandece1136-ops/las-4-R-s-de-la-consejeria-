@@ -34,7 +34,7 @@ app.use(express.json());
 // API: Generar o actualizar ruta de consejería
 app.post("/api/generar-ruta", async (req, res) => {
   try {
-    const { problema, contexto, etapaInicialSelect, prevRouteJson } = req.body;
+    const { problema, contexto, etapaInicialSelect, prevRouteJson, isLiderCase } = req.body;
 
     if (!problema || !problema.trim()) {
       res.status(400).json({ error: "La descripción del problema es requerida." });
@@ -43,14 +43,25 @@ app.post("/api/generar-ruta", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const systemInstruction = `Eres un teólogo y consejero bíblico cristocéntrico experto y compasivo, con décadas de experiencia en el pastoreo de almas y consejería bíblica (psicología bíblica).
-Sigues de forma rigurosa la metodología de transformación de las "4R" para guiar a las personas desde su crisis o dolor hacia la madurez y arrepentimiento en Cristo:
+    let systemInstruction = `Eres un teólogo y consejero bíblico teocéntrico y cristocéntrico experto y compasivo, con décadas de experiencia en el pastoreo de almas y consejería bíblica para creyentes y líderes eclesiales.
+Sigues de forma rigurosa la metodología de transformación de las "4R" para guiar a las personas desde su crisis o dolor hacia la madurez y el arrepentimiento sincero en Cristo:
   1. Redefinir: Redefinir la situación de forma vertical (bíblica), ayudando a ver que los problemas horizontales (circunstancias, personas) revelan realidades verticales de nuestra relación con Dios.
-  2. Reenfocar: Dirigir el enfoque al corazón del aconsejado. Revelar las motivaciones interiores, ídolos del corazón (comodidad, control, aprobación, placer) y sus propias respuestas en lugar de obsesionarse con la conducta ajena.
-  3. Rendir: Someter los ídolos, demandas y pecados al señorío de Cristo mediante el arrepentimiento sincero, rindiendo de rodillas las prioridades del ego y abrazando la gracia justificadora y santificadora de la cruz.
-  4. Reestructurar: Establecer nuevos hábitos de obediencia, fe encarnada y amor práctico. Crear pautas concretas para vestir el nuevo hombre según Efesios 4:22-24.
+  2. Reenfocar: Dirigir el enfoque al corazón del aconsejado. Revelar las motivaciones interiores, ídolos del corazón (comodidad, control, aprobación, placer, éxito ministerial) y sus propias respuestas en lugar de obsesionarse con la conducta ajena o los frutos públicos.
+  3. Rendir: Someter los ídolos, demandas, orgullo y pecados al señorío de Cristo mediante el arrepentimiento sincero, rindiendo las prioridades del ego ante Dios y abrazando la gracia justificadora y santificadora de la cruz.
+  4. Reestructurar: Establecer nuevos hábitos de obediencia de fe, discipulado y amor práctico. Crear pautas concretas para vestir el nuevo hombre según Efesios 4:22-24.`;
 
-Instrucciones para generar la ruta:
+    if (isLiderCase) {
+      systemInstruction += `\n\nCRÍTICO: Este es un caso de CONSEJERÍA PARA LÍDERES MINISTERIALES / MINISTROS. Los líderes enfrentan presiones y tentaciones únicas, orgullo ministerial, aislamiento relacional y una identidad unida a su rol público antes que a Cristo.
+Debes rellenar obligatoriamente todos los campos opcionales del liderazgo en el JSON:
+- "diagnosticoLider": diagnóstico específico de cómo la obra, el rol o las expectativas de la iglesia agitan el corazón del líder.
+- "pecadoMinisterial": pecado raíz público u oculto o patrón en el ministerio (aislamiento, doble vida, perfeccionismo, codicia de poder, burnout, etc.).
+- "riesgoMinisterio": indicador booleano de si hay riesgo inminente de caída, escándalo público o necesidad urgente de un proceso formal de restauración ministerial.
+- "patronesLider": array de 3 o 4 patrones del alma propios del liderazgo que se manifiestan aquí.
+- "prevencion": un objeto completo con { "habitos": [], "comunidad": "", "limites": [] } enfocado en sostenibilidad espiritual del ministro.
+- "pasajesLider": array de exactamente 3 pasajes sobre pastoreo, humildad e identidad ministerial aplicada (p. ej., 1 Pedro 5:1-4, 2 Corintios 12:9).`;
+    }
+
+    systemInstruction += `\n\nInstrucciones para generar la ruta:
 - Sé sumamente específico. Evita generalidades vacías. Utiliza terminología pastoral y bíblica profunda.
 - Devuelve EXACTAMENTE las 4 etapas del proceso, rellenando con precisión la información de las preguntas de corazón, las herramientas pastorales y las tareas aplicables para este caso específico.
 - Cada etapa debe tener exactamente 4 preguntas profundas de introspección espiritual, exactamente 3 herramientas específicas en sesión y exactamente 3 pasajes bíblicos.
@@ -60,6 +71,7 @@ Instrucciones para generar la ruta:
 Problema o dolor actual expresado por el aconsejado: "${problema}"
 Áreas de vida seleccionadas o contexto: "${contexto || "General"}"
 Sugerencia de etapa inicial: ${etapaInicialSelect === "auto" ? "Detectar de manera automática de acuerdo a la severidad de la situación" : `Etapa ${etapaInicialSelect}`}
+Modo del caso: ${isLiderCase ? "LIDERAZGO MINISTERIAL (Aplicar un enfoque de salud del alma del ministro)" : "CONSEJERÍA GENERAL o PERSONAL"}
 `;
 
     if (prevRouteJson) {
@@ -101,8 +113,16 @@ Sugerencia de etapa inicial: ${etapaInicialSelect === "auto" ? "Detectar de mane
               },
               herramientas: {
                 type: Type.ARRAY,
-                description: "Exactamente 3 herramientas para usar en sesión con el consejero.",
-                items: { type: Type.STRING }
+                description: "Exactamente 3 herramientas pastorales estructuradas para usar en sesión con el consejero.",
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    nombre: { type: Type.STRING, description: "Nombre claro e identificativo de la herramienta o dinámica pastoral (máximo 5 palabras)." },
+                    concepto: { type: Type.STRING, description: "Qué es la herramienta/dinámica: fundamento teológico, significado y por qué ayuda al aconsejado (2-3 oraciones claras)." },
+                    instrucciones: { type: Type.STRING, description: "Cómo se realiza la herramienta paso a paso con el aconsejado para guiarle (guía práctica de 3 a 5 pasos claros numerados o en viñetas)." }
+                  },
+                  required: ["nombre", "concepto", "instrucciones"]
+                }
               },
               tarea: { type: Type.STRING, description: "La tarea espiritual o relacional concreta y realizable en casa." },
               pasajes: {
@@ -129,6 +149,57 @@ Sugerencia de etapa inicial: ${etapaInicialSelect === "auto" ? "Detectar de mane
         derivar: {
           type: Type.BOOLEAN,
           description: "True si hay indicadores graves que sugieran la necesidad de derivar a atención de salud mental urgente o reportes pertinentes ante situaciones delictivas/de violencia extrema."
+        },
+        // Leadership optional properties
+        diagnosticoLider: {
+          type: Type.STRING,
+          description: "Análisis teológico específico de cómo el ministerio y el rol están afectando el corazón del líder (2-3 oraciones). Requerido si isLiderCase es true."
+        },
+        pecadoMinisterial: {
+          type: Type.STRING,
+          description: "El pecado o patrón raíz específico que emerge en el contexto del liderazgo (aislamiento, doble vida, orgullo ministerial, etc.). Requerido si isLiderCase es true."
+        },
+        riesgoMinisterio: {
+          type: Type.BOOLEAN,
+          description: "True si hay riesgo de caída pública o necesidad urgente de un proceso de restauración ministerial formal. Requerido si isLiderCase es true."
+        },
+        patronesLider: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description: "De 3 a 4 patrones de pensamiento o conducta propios de líderes que aparecen aquí. Requerido si isLiderCase es true."
+        },
+        prevencion: {
+          type: Type.OBJECT,
+          properties: {
+            habitos: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "Array de exactamente 3 hábitos diarios o semanales de restauración y sostenibilidad para prevenir recaídas."
+            },
+            comunidad: {
+              type: Type.STRING,
+              description: "Directrices de rendición de cuentas e inserción en una comunidad de pastores o consejeros."
+            },
+            limites: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "Array de exactamente 3 límites saludables específicos en el ministerio."
+            }
+          },
+          required: ["habitos", "comunidad", "limites"],
+          description: "Plan de prevención de recaídas y sostenibilidad ministerial. Requerido si isLiderCase es true."
+        },
+        pasajesLider: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              ref: { type: Type.STRING, description: "Cita bíblica sobre liderazgo o pastoreo (ej. '1 Pedro 5:1-4')." },
+              razon: { type: Type.STRING, description: "Por qué este pasaje es vital para el sostenimiento e identidad del líder." }
+            },
+            required: ["ref", "razon"]
+          },
+          description: "Exactamente 3 pasajes bíblicos sobre el liderazgo, servicio y debilidad pastoral aplicados al caso. Requerido si isLiderCase es true."
         }
       },
       required: ["titulo", "etapaInicial", "diagnostico", "etapas", "senalesAlerta", "derivar"]

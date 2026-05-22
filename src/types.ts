@@ -3,6 +3,12 @@ export interface ScripturePassage {
   razon: string;
 }
 
+export interface HerramientaDetalle {
+  nombre: string;
+  concepto: string;
+  instrucciones: string;
+}
+
 export interface CounselingStage {
   numero: number;
   nombre: string;
@@ -10,7 +16,7 @@ export interface CounselingStage {
   mentira: string;
   verdad: string;
   preguntas: string[];
-  herramientas: string[];
+  herramientas: (string | HerramientaDetalle)[];
   tarea: string;
   pasajes: ScripturePassage[];
 }
@@ -22,11 +28,22 @@ export interface CounselingRoute {
   etapas: CounselingStage[];
   senalesAlerta: string[];
   derivar: boolean;
+  // Leadership fields
+  diagnosticoLider?: string;
+  pecadoMinisterial?: string;
+  riesgoMinisterio?: boolean;
+  patronesLider?: string[];
+  prevencion?: {
+    habitos: string[];
+    comunidad: string;
+    limites: string[];
+  };
+  pasajesLider?: { ref: string; razon: string }[];
 }
 
 export interface SessionNote {
   txt: string;
-  etapa: number;
+  etapa: number; // or can represent Tab id for leaders
   hora: string;
 }
 
@@ -40,5 +57,6 @@ export interface SavedCase {
   activeStage: number;
   route: CounselingRoute;
   notas: SessionNote[];
+  isLiderCase?: boolean;
 }
 
